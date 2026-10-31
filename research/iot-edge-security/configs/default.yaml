@@ -1,0 +1,55 @@
+# Default experiment configuration for the IoT edge security framework.
+data:
+  # Directory with CIC IoT-DIAD 2024 AD_Flow-based-features CSVs (drop UNB CSVs here,
+  # or pass --data-dir). The sandbox default points at a GitHub-mirrored sample.
+  dir: data/raw
+  sample_frac: 1.0        # set <1.0 to subsample (sandbox-friendly)
+  seed: 42
+
+split:
+  test_size: 0.20
+  val_size: 0.10
+  seed: 42
+
+zero_day:
+  holdout_families: [Mirai, Spoofing]   # attack families unseen during training
+  seed: 42
+
+features:
+  drop_identifiers: [Flow ID, Src IP, Src Port, Dst IP, Dst Port, Timestamp]
+  # protocol kept as numeric feature
+
+framework:
+  ae_hidden: [32, 8, 32]        # compact autoencoder bottleneck
+  ae_max_iter: 60
+  ae_threshold_quantile: 0.99   # anomaly threshold = quantile of benign recon error
+  conf_threshold: 0.60          # below this max-prob -> zero-day flag
+  classifier: histgb            # histgb | xgboost | lightgbm
+  classifier_params:
+    max_iter: 300
+    learning_rate: 0.1
+    max_leaf_nodes: 63
+
+baselines:
+  xgboost:
+    n_estimators: 300
+    max_depth: 8
+    learning_rate: 0.1
+  extratrees:
+    n_estimators: 300
+    max_depth: null
+  lightgbm:
+    n_estimators: 300
+    learning_rate: 0.1
+    num_leaves: 63
+  catboost:
+    iterations: 300
+    depth: 8
+    learning_rate: 0.1
+  ae_only:
+    hidden: [32, 8, 32]
+    threshold_quantile: 0.99
+
+benchmark:
+  batch_sizes: [1, 16, 64, 256]
+  repeat: 5

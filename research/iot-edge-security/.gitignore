@@ -1,0 +1,13 @@
+data/
+models/
+results/
+*.csv
+*.pkl
+*.joblib
+*.png
+*.pdf
+__pycache__/
+.venv/
+venv/
+.ipynb_checkpoints/
+catboost_info/
