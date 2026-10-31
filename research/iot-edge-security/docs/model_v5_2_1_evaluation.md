@@ -59,10 +59,10 @@ so their internals (reporting, golden-reference generation, certification, signi
 
 ## Bugs found (fix before next run)
 
-1. **`--verify-embedded` crashes**: the `__main__` dispatch calls `_uhm_verify_embedded()`,
-   which is never defined (only `_uhm_get_helper_source`/`_uhm_install_helpers` exist).
-   → NameError. Replace with a loop over `_UHM_EMBEDDED_MODULES` calling
-   `_uhm_get_helper_source` (as `--extract-helpers` does).
+1. **Dead/broken `--verify-embedded` dispatch line**: the bottom `__main__` chain calls
+   `_uhm_verify_embedded()`, which is never defined — but `_uhm_early_action()` handles
+   `--verify-embedded` first and exits, so this is unreachable dead code, not a runtime
+   crash. V5.2.2 removes the dead branch.
 2. **Runtime monkey-patching of embedded helpers is fragile**: `v4_patch_run_helpers()`
    string-replaces markers inside the decompressed helper source and `exec`s it, and
    rewrites `write_json` payloads by *filename*. Any whitespace/format change in the
