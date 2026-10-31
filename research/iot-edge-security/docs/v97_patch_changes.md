@@ -29,3 +29,27 @@ patched file fails safe, `--align-mirai-to-block` and `--dry-run` verified).
 If a marker doesn't match your real file (whitespace/format drift from what was
 reviewed), the patcher names the failing fix — paste the error and the marker gets
 adjusted; nothing is ever half-applied.
+
+## Audit revision (v2 of the patcher)
+
+An external audit tested the first version of this patcher against the real
+`Dataset Preprocessing.txt` and found five defects, all fixed in `make_v97_patch.py`
+v2 (functionally re-tested on a fixture reproducing the real structures):
+
+| Audit finding | v2 fix |
+|---|---|
+| V2 deleted the *effective* (last, `horizontal=True`) bar function, changing chart orientation | V2 now deletes the **shadowed first** definition and keeps the last (effective) one |
+| V3 wrapper inspected `args[-1]` (the counters dict), not the caps — no real optimisation | V3 short-circuits on **cap-like CONFIG keys** (names containing CAP/MAX/LIMIT with `None`/int values), memoised once; a positional int arg is treated as a directly-passed cap and disables the short-circuit; fails safe (no optimisation) when no cap-like keys are found |
+| V4 throttle could suppress the final render; `force` only checked as kwarg | V4 wrapper treats `force=True`/`final=True` kwargs **or** a first positional `True` as always-render; `V97_DASH_ALWAYS=1` disables throttling entirely; changelog tells the caller to pass `force=True` on the terminal call |
+| V5 only matched standalone HTML text; real labels live in Python data structures | V5 now also matches quoted string **values** (`'FDSS'` not followed by `:` — dict keys are never rewritten) plus `>FDSS<` HTML text and bare tokens on HTML lines |
+| V7 only matched `NAME = Path(...)`; real paths are CONFIG string values | V7 wraps both `'KEY': '<...drive...>'` CONFIG entries (→ `os.environ.get('V97_KEY', ...)`) and `NAME = Path(<drive literal>)` assignments; derived paths like `Path(CONFIG[...])` are untouched |
+| V8 inserted a raising call as `dict.get(...)` default → raised even for valid splits | V8 replaces the empty `Path("")` with a **lazy** `_V97UnknownSplitDir()` object: instantiation is side-effect free; only an actual `.glob()` on an unknown split raises |
+| V6 comment asserted a rationale | V6 comment is neutral: mapping kept **unchanged pending a documented policy decision** |
+
+Accepted as-is: V1 (SQL). Scientific concern (FDSS/DFDI/FLS/ASCS/AIS are proxies, not
+published metrics and not independent evidence) is documented with exact definitions
+and thesis-safe wording in `docs/v97_metric_definitions.md`.
+
+Remaining verification gap: the real `Dataset Preprocessing.txt` is not in this repo.
+Drop it into `colab/` and run the patcher here so every marker is checked against the
+actual source before any full run.
